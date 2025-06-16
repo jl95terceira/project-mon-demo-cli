@@ -18,6 +18,11 @@ import jl95.tbb.pmon.update.PmonUpdate;
 import jl95.tbb.pmon.update.PmonUpdateByMove;
 import jl95.tbb.pmon.update.PmonUpdateByPass;
 import jl95.tbb.pmon.update.PmonUpdateBySwitchIn;
+import jl95.tbb.pmon.update.PmonUpdateOnTarget;
+import jl95.tbb.pmon.update.PmonUpdateOnTargetByDamage;
+import jl95.tbb.pmon.update.PmonUpdateOnTargetByStatModifier;
+import jl95.tbb.pmon.update.PmonUpdateOnTargetByStatusCondition;
+import jl95.tbb.pmon.update.PmonUpdateOnTargetBySwitchIn;
 import jl95.util.StrictMap;
 import jl95.util.StrictSet;
 
@@ -69,7 +74,7 @@ public class PmonBattleDemo {
             var move = new PmonMove(named("Tackle"), PmonTypes.NORMAL);
             move.status.pp = 30;
             move.attrs.accuracy = 80;
-            move.attrs.power = PmonMovePower.typed(40);
+            move.attrs.damageEffect.power = PmonMovePower.typed(40);
             return move;
         };
         public static Function0<PmonMove> growl  = () -> {
@@ -222,13 +227,13 @@ public class PmonBattleDemo {
                                         }
 
                                         @Override
-                                        public void hit(Iterable<PmonEffect> atomicUpdates) {
+                                        public void hit(Iterable<PmonUpdateOnTarget> atomicUpdates) {
                                             var foePartyName = PartyIds.namesMap.get(foePartyId);
                                             var foeMonName = Pmons.namesMap.get(foeMon.id);
                                             for (var atomicUpdate: atomicUpdates) {
-                                                atomicUpdate.call(new PmonEffect.Handlers() {
+                                                atomicUpdate.call(new PmonUpdateOnTarget.Handlers() {
                                                     @Override
-                                                    public void damage(PmonEffectByDamage update) {
+                                                    public void damage(PmonUpdateOnTargetByDamage update) {
                                                         if (update.criticalHit) {
                                                             System.out.println("It's a critical hit!");
                                                         }
@@ -239,17 +244,17 @@ public class PmonBattleDemo {
                                                     }
 
                                                     @Override
-                                                    public void statModify(PmonEffectByStatModifier update) {
+                                                    public void statModify(PmonUpdateOnTargetByStatModifier update) {
                                                         System.out.printf("It modified the stats of %s's %s!%n", foePartyName, foeMonName);
                                                     }
 
                                                     @Override
-                                                    public void statusCondition(PmonEffectByStatusCondition update) {
+                                                    public void statusCondition(PmonUpdateOnTargetByStatusCondition update) {
                                                         System.out.printf("It applied a status condition on %s's %s!%n", foePartyName, foeMonName);
                                                     }
 
                                                     @Override
-                                                    public void switchIn(PmonEffectBySwitchIn update) {
+                                                    public void switchIn(PmonUpdateOnTargetBySwitchIn update) {
                                                         System.out.printf("???%n");
                                                     }
                                                 });
