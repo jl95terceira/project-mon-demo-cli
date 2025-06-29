@@ -81,14 +81,14 @@ public class PmonBattleDemo {
             var move = new PmonMove(named("Growl"), PmonTypes.NORMAL);
             move.status.pp = 20;
             move.attrs.accuracy = 100;
-            move.attrs.statModifiers.put(PmonStatModifierType.ATTACK, new Chanced<>(-1, 100));
+            move.attrs.statModifierEffect.statModifiers.put(PmonStatModifierType.ATTACK, new Chanced<>(-1, 100));
             return move;
         };
         public static Function0<PmonMove> leer   = () -> {
             var move = new PmonMove(named("Leer"), PmonTypes.NORMAL);
             move.status.pp = 20;
             move.attrs.accuracy = 100;
-            move.attrs.statModifiers.put(PmonStatModifierType.DEFENSE, new Chanced<>(-1, 100));
+            move.attrs.statModifierEffect.statModifiers.put(PmonStatModifierType.DEFENSE, new Chanced<>(-1, 100));
             return move;
         };
     }
