@@ -1,4 +1,4 @@
-package jl95.tbb.pmon._demo;
+package jl95.tbb.pmon.demo;
 
 import jl95.lang.I;
 import jl95.lang.Ref;
@@ -7,22 +7,13 @@ import jl95.tbb.Battle;
 import jl95.tbb.PartyId;
 import jl95.tbb.mon.MonFieldPosition;
 import jl95.tbb.pmon.*;
-import jl95.tbb.pmon.effect.*;
+import jl95.tbb.pmon.decision.PmonDecisionToSwitchOut;
 import jl95.tbb.pmon.attrs.PmonMoveEffectivenessType;
 import jl95.tbb.pmon.attrs.PmonMovePower;
 import jl95.tbb.pmon.attrs.PmonType;
-import jl95.tbb.pmon.decision.PmonDecisionToSwitchIn;
 import jl95.tbb.pmon.decision.PmonDecisionToUseMove;
 import jl95.tbb.pmon.status.PmonStatModifierType;
-import jl95.tbb.pmon.update.PmonUpdate;
-import jl95.tbb.pmon.update.PmonUpdateByMove;
-import jl95.tbb.pmon.update.PmonUpdateByPass;
-import jl95.tbb.pmon.update.PmonUpdateBySwitchIn;
-import jl95.tbb.pmon.update.PmonUpdateOnTarget;
-import jl95.tbb.pmon.update.PmonUpdateOnTargetByDamage;
-import jl95.tbb.pmon.update.PmonUpdateOnTargetByStatModifier;
-import jl95.tbb.pmon.update.PmonUpdateOnTargetByStatusCondition;
-import jl95.tbb.pmon.update.PmonUpdateOnTargetBySwitchIn;
+import jl95.tbb.pmon.update.*;
 import jl95.util.StrictMap;
 import jl95.util.StrictSet;
 
@@ -74,21 +65,21 @@ public class PmonBattleDemo {
             var move = new PmonMove(named("Tackle"), PmonTypes.NORMAL);
             move.status.pp = 30;
             move.attrs.accuracy = 80;
-            move.attrs.damageEffect.power = PmonMovePower.typed(40);
+            move.attrs.effects.damage.power = PmonMovePower.typed(40);
             return move;
         };
         public static Function0<PmonMove> growl  = () -> {
             var move = new PmonMove(named("Growl"), PmonTypes.NORMAL);
             move.status.pp = 20;
             move.attrs.accuracy = 100;
-            move.attrs.statModifierEffect.statModifiers.put(PmonStatModifierType.ATTACK, new Chanced<>(-1, 100));
+            move.attrs.effects.stats.statModifiers.put(PmonStatModifierType.ATTACK, new Chanced<>(-1, 100));
             return move;
         };
         public static Function0<PmonMove> leer   = () -> {
             var move = new PmonMove(named("Leer"), PmonTypes.NORMAL);
             move.status.pp = 20;
             move.attrs.accuracy = 100;
-            move.attrs.statModifierEffect.statModifiers.put(PmonStatModifierType.DEFENSE, new Chanced<>(-1, 100));
+            move.attrs.effects.stats.statModifiers.put(PmonStatModifierType.DEFENSE, new Chanced<>(-1, 100));
             return move;
         };
     }
@@ -135,7 +126,7 @@ public class PmonBattleDemo {
                     var decision = function((Pmon mon) -> {
 
                         if (mon.status.hp <= 0 || I.of(mon.status.statModifiers.values()).any(stages -> stages <= -2)) {
-                            var decisionToSwitchIn = new PmonDecisionToSwitchIn();
+                            var decisionToSwitchIn = new PmonDecisionToSwitchOut();
                             for (var i : I.range(party.mons.size())) {
                                 var monToSwitchIn = party.mons.get(i);
                                 if (monToSwitchIn.status.hp <= 0) continue;
@@ -201,7 +192,7 @@ public class PmonBattleDemo {
                             }
 
                             @Override
-                            public void switchIn(PmonUpdateBySwitchIn update) {
+                            public void switchOut(PmonUpdateBySwitchOut update) {
                                 var party = globalContextRef.get().parties.get(update.partyId);
                                 System.out.printf("%s withdraws %s and switches in %s!\n",
                                         PartyIds.namesMap.get(update.partyId),
@@ -254,7 +245,7 @@ public class PmonBattleDemo {
                                                     }
 
                                                     @Override
-                                                    public void switchIn(PmonUpdateOnTargetBySwitchIn update) {
+                                                    public void switchOut(PmonUpdateOnTargetBySwitchOut update) {
                                                         System.out.printf("???%n");
                                                     }
                                                 });
