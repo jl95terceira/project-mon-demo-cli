@@ -22,7 +22,7 @@ import java.util.Random;
 
 import static jl95.lang.SuperPowers.*;
 
-public class PmonBattleDemo {
+public class Main {
 
     public static class PartyIds {
         public static StrictMap<PartyId, String> namesMap = strict(Map());
