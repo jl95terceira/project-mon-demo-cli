@@ -57,7 +57,6 @@
     </build>
 
     <name>${project.groupId}:${project.artifactId}</name>
-    <description>Batteries for Java, in complement of the standard library</description>
     <url>https://${project.github.path}</url>
     <licenses>
       <license>
