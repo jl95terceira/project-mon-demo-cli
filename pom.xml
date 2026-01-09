@@ -19,7 +19,7 @@
         <dependency>
             <groupId>io.github.jl95terceira</groupId>
             <artifactId>pmon</artifactId>
-            <version>0.5.0</version>
+            <version>0.5.1</version>
         </dependency>
     </dependencies>
 
