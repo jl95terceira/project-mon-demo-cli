@@ -189,6 +189,7 @@ public class Main {
                                 decisionToSwitchIn.monSwitchInIndex = i;
                                 return PmonDecision.from(decisionToSwitchIn);
                             }
+                            // no switch-in-able mon in party
                         }
                         var decisionToUseMove = new PmonDecisionToUseMove();
                         decisionToUseMove.moveIndex = new Random().nextInt(0, mon.moves.size());
