@@ -119,9 +119,20 @@ public class Main {
         Pmons.pmon4.moves.add(MoveFactories.leer  .apply());
     }
 
-    public static void pause() { sleep(600); }
     public static void main(String[] args) {
+        new Main(args);
+    }
 
+    private final int pauseDuration;
+
+    public Main(String[] args) {
+
+        if (args.length > 0) {
+            pauseDuration = Integer.valueOf(args[0]);
+        }
+        else {
+            pauseDuration = 0;
+        }
         var battle = new PmonBattle(new PmonRuleset());
         var playerEntry = new PmonPartyEntry();
         playerEntry.mons.addAll(List(Pmons.pmon1, Pmons.pmon4));
@@ -302,5 +313,9 @@ public class Main {
         else {
             System.out.printf("Nobody wins%n");
         }
+    }
+
+    public void pause() {
+        sleep(pauseDuration);
     }
 }
