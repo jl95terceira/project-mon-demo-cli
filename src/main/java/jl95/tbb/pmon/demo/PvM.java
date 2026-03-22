@@ -143,54 +143,6 @@ public class PvM {
         npcEntry.mons.addAll(List(Pmons.pmon2, Pmons.pmon3));
         P<PmonGlobalContext> globalContextRef = new P<>(null);
         StrictMap<PartyId, PmonLocalContext> localContextRefs = strict(Map());
-        Method2<MonPartyFieldPosition,Iterable<PmonUpdateOnTarget>> updateOnTargetHandler = (monId, atomicUpdates) -> {
-            var targetPartyName = PartyIds.namesMap.get(monId.partyId());
-            var targetMonName = Pmons.namesMap.get(globalContextRef.get().parties.get(monId.partyId()).monsOnField.get(monId.position()).id);
-            for (var atomicUpdate: atomicUpdates) {
-                atomicUpdate.get(new PmonUpdateOnTarget.Handler() {
-                    @Override
-                    public void damage(PmonUpdateOnTargetByDamage update) {
-                        if (update.criticalHit) {
-                            System.out.println("It's a critical hit!");
-                        }
-                        if (update.effectivenessFactor != 1.0) {
-                            System.out.println(update.effectivenessFactor > 1.0? "It's super effective!": "It's not very effective...");
-                        }
-                        System.out.printf("%s's %s took %s damage!%n", targetPartyName, targetMonName, update.damage);
-                    }
-
-                    @Override
-                    public void statModify(PmonUpdateOnTargetByStatModifier update) {
-                        for (var e: update.increments.entrySet()) {
-                            System.out.printf("%s's %s got its %s %s!%n", targetPartyName, targetMonName, e.getKey(), e.getValue() > 0? "increased": "reduced");
-                        }
-                        for (var e: update.resets) {
-                            System.out.printf("%s's %s got its %s reset!%n", targetPartyName, targetMonName, e);
-                        }
-                    }
-
-                    @Override
-                    public void statusCondition(PmonUpdateOnTargetByStatusCondition update) {
-                        for (var e: update.statusConditionsInflict) {
-                            System.out.printf("%s's %s attained %s!%n", targetPartyName, targetMonName, e.id);
-                        }
-                        for (var e: update.statusConditionsCure) {
-                            System.out.printf("%s's %s was cured of %s!%n", targetPartyName, targetMonName, e);
-                        }
-                    }
-
-                    @Override
-                    public void lockMove(PmonUpdateOnTargetByLockMove pmonUpdateOnTargetByLockMove) {
-                        System.out.printf("%s's %s was move-locked!%n", targetPartyName, targetMonName);
-                    }
-
-                    @Override
-                    public void switchOut(PmonUpdateOnTargetBySwitchOut update) {
-                        System.out.printf("???%n");
-                    }
-                });
-            }
-        };
         var dialogForDecision = new PlayerDialogForDecision()
                 .partyNameGetter(PartyIds.namesMap::get)
                 .pmonNameGetter(Pmons.namesMap::get)
@@ -232,7 +184,6 @@ public class PvM {
                         decisionToUseMove.moveIndex = new Random().nextInt(0, mon.moves.size());
                         decisionToUseMove.target = PmonDecisionToUseMove.Target.mon(new MonPartyFieldPosition(pFoe, localContextRefs.get(p).foeParties.get(pFoe).keySet().iterator().next()));
                         return PmonDecision.from(decisionToUseMove);
-
                     });
                     return strict(I.of(monPositionsAble).toMap(id -> id, decision));
 
@@ -240,19 +191,14 @@ public class PvM {
                 new Battle.Handler<>() {
                     @Override
                     public void onGlobalContext(PmonGlobalContext context) {
-
                         globalContextRef.set(context);
                     }
-
                     @Override
                     public void onLocalContext(PartyId p, PmonLocalContext localContext) {
-
                         localContextRefs.put(p, localContext);
                     }
-
                     @Override
                     public void onLocalUpdate(PartyId id, PmonUpdate pmonUpdate) {
-
                         if (id != PartyIds.PLAYER1) return;
                         dialogForContextUpdate.handle(localContextRefs.get(id), pmonUpdate);
                     }
