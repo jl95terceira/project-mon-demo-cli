@@ -191,7 +191,7 @@ public class PvM {
                 });
             }
         };
-        var dialog = new PlayerCharacterDialog()
+        var dialog = new PlayerDialog()
                 .partyNameGetter(PartyIds.namesMap::get)
                 .pmonNameGetter(Pmons.namesMap::get)
                 .moveNameGetter(MoveFactories.namesMap::get);
