@@ -25,9 +25,9 @@ import java.util.Random;
 
 import static jl95.lang.SuperPowers.*;
 
-public class Main {
+public class MvM {
 
-    public static class PartyIds {
+    private static class PartyIds {
         public static StrictMap<PartyId, String> namesMap = strict(Map());
         public static PartyId named(String name) {
             var id = new PartyId();
@@ -37,7 +37,7 @@ public class Main {
         public static PartyId PLAYER1 = named("Player 1");
         public static PartyId PLAYER2 = named("Player 2");
     }
-    public static class Pmons {
+    private static class Pmons {
         public static StrictMap<Pmon.Id, String> namesMap = strict(Map());
         public static Pmon.Id named(String name) {
             var id = new Pmon.Id();
@@ -49,7 +49,7 @@ public class Main {
         public static Pmon pmon3 = new Pmon(named("GREEN"));
         public static Pmon pmon4 = new Pmon(named("YELLOW"));
     }
-    public static class PmonTypes {
+    private static class PmonTypes {
         public static PmonType NORMAL = new PmonType(new PmonType.Id()) {
             @Override
             public PmonMove.EffectivenessType effectivenessAgainst(PmonType other) {
@@ -57,7 +57,7 @@ public class Main {
             }
         };
     }
-    public static class MoveFactories {
+    private static class MoveFactories {
         public static StrictMap<PmonMove.Id, String> namesMap = strict(Map());
         public static PmonMove.Id named(String name) {
             var id = new PmonMove.Id();
@@ -120,19 +120,22 @@ public class Main {
     }
 
     public static void main(String[] args) {
-        new Main(args);
+        new MvM(args.length > 0? Integer.parseInt(args[0]): 0)
+                .run();
     }
 
     private final int pauseDuration;
 
-    public Main(String[] args) {
+    public MvM(int pauseDuration) {
 
-        if (args.length > 0) {
-            pauseDuration = Integer.valueOf(args[0]);
-        }
-        else {
-            pauseDuration = 0;
-        }
+        this.pauseDuration = pauseDuration;
+    }
+
+    private void pause() {
+        sleep(pauseDuration);
+    }
+    public void run() {
+
         var battle = new PmonBattle(new PmonRuleset());
         var playerEntry = new PmonPartyEntry();
         playerEntry.mons.addAll(List(Pmons.pmon1, Pmons.pmon4));
@@ -141,8 +144,8 @@ public class Main {
         Ref<PmonGlobalContext> globalContextRef = new Ref<>();
         StrictMap<PartyId, PmonLocalContext> localContextRefs = strict(Map());
         Method2<MonId,Iterable<PmonUpdateOnTarget>> updateOnTargetHandler = (monId, atomicUpdates) -> {
-            var foePartyName = PartyIds.namesMap.get(monId.partyId());
-            var foeMonName = Pmons.namesMap.get(globalContextRef.get().parties.get(monId.partyId()).monsOnField.get(monId.position()).id);
+            var targetPartyName = PartyIds.namesMap.get(monId.partyId());
+            var targetMonName = Pmons.namesMap.get(globalContextRef.get().parties.get(monId.partyId()).monsOnField.get(monId.position()).id);
             for (var atomicUpdate: atomicUpdates) {
                 atomicUpdate.get(new PmonUpdateOnTarget.Handler() {
                     @Override
@@ -153,22 +156,32 @@ public class Main {
                         if (update.effectivenessFactor != 1.0) {
                             System.out.println(update.effectivenessFactor > 1.0? "It's super effective!": "It's not very effective...");
                         }
-                        System.out.printf("%s's %s took %s damage!%n", foePartyName, foeMonName, update.damage);
+                        System.out.printf("%s's %s took %s damage!%n", targetPartyName, targetMonName, update.damage);
                     }
 
                     @Override
                     public void statModify(PmonUpdateOnTargetByStatModifier update) {
-                        System.out.printf("%s's %s got its stats modified!%n", foePartyName, foeMonName);
+                        for (var e: update.increments.entrySet()) {
+                            System.out.printf("%s's %s got its %s %s!%n", targetPartyName, targetMonName, e.getKey(), e.getValue() > 0? "increased": "reduced");
+                        }
+                        for (var e: update.resets) {
+                            System.out.printf("%s's %s got its %s reset!%n", targetPartyName, targetMonName, e);
+                        }
                     }
 
                     @Override
                     public void statusCondition(PmonUpdateOnTargetByStatusCondition update) {
-                        System.out.printf("%s's %s attained a status condition!%n", foePartyName, foeMonName);
+                        for (var e: update.statusConditionsInflict) {
+                            System.out.printf("%s's %s attained %s!%n", targetPartyName, targetMonName, e.id);
+                        }
+                        for (var e: update.statusConditionsCure) {
+                            System.out.printf("%s's %s was cured of %s!%n", targetPartyName, targetMonName, e);
+                        }
                     }
 
                     @Override
                     public void lockMove(PmonUpdateOnTargetByLockMove pmonUpdateOnTargetByLockMove) {
-                        System.out.printf("%s's %s was move-locked!%n", foePartyName, foeMonName);
+                        System.out.printf("%s's %s was move-locked!%n", targetPartyName, targetMonName);
                     }
 
                     @Override
@@ -282,7 +295,7 @@ public class Main {
                                     e.a3.get(new PmonUpdateByMove.UsageResult.Handler() {
                                         @Override
                                         public void miss(PmonUpdateByMove.UsageResult.MissType missType) {
-                                            System.out.printf("Wow... It missed %s's %s!%n", PartyIds.namesMap.get(foePartyId), Pmons.namesMap.get(foeMon.id));
+                                            System.out.printf("It missed %s's %s...%n", PartyIds.namesMap.get(foePartyId), Pmons.namesMap.get(foeMon.id));
                                         }
                                         @Override
                                         public void immobilised(PmonStatusCondition.Id id) {
@@ -313,9 +326,5 @@ public class Main {
         else {
             System.out.printf("Nobody wins%n");
         }
-    }
-
-    public void pause() {
-        sleep(pauseDuration);
     }
 }
