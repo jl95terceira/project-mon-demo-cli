@@ -7,18 +7,18 @@ import java.util.Scanner;
 
 import static jl95.lang.SuperPowers.method;
 
-public class PlayerDialogInterface {
+public class PlayerInterface {
 
     private static final int foeInfoLineAlignIndex = 32;
 
     private PrintStream outNullable;
     private InputStream inNullable;
 
-    public PlayerDialogInterface out(PrintStream out) {
+    public PlayerInterface out(PrintStream out) {
         this.outNullable = out;
         return this;
     }
-    public PlayerDialogInterface in(InputStream in) {
+    public PlayerInterface in(InputStream in) {
         this.inNullable = in;
         return this;
     }

@@ -12,24 +12,24 @@ import java.util.Optional;
 
 import static jl95.lang.SuperPowers.*;
 
-public class PlayerDialog {
+public class PlayerDialogForDecision {
 
     private static final int foeInfoLineAlignIndex = 32;
 
-    public PlayerDialogInterface pli = new PlayerDialogInterface();
+    public PlayerInterface pli = new PlayerInterface();
     private Function1<String, PartyId> partyNameGetterNullable;
     private Function1<String, Pmon.Id> pmonNameGetterNullable;
     private Function1<String, PmonMove.Id> moveNameGetterNullable;
 
-    public PlayerDialog partyNameGetter(Function1<String, PartyId> i) {
+    public PlayerDialogForDecision partyNameGetter(Function1<String, PartyId> i) {
         this.partyNameGetterNullable = i;
         return this;
     }
-    public PlayerDialog pmonNameGetter(Function1<String, Pmon.Id> i) {
+    public PlayerDialogForDecision pmonNameGetter(Function1<String, Pmon.Id> i) {
         this.pmonNameGetterNullable = i;
         return this;
     }
-    public PlayerDialog moveNameGetter(Function1<String, PmonMove.Id> i) {
+    public PlayerDialogForDecision moveNameGetter(Function1<String, PmonMove.Id> i) {
         this.moveNameGetterNullable = i;
         return this;
     }
@@ -40,9 +40,10 @@ public class PlayerDialog {
         var pmonNameGetter  = Optional.ofNullable(pmonNameGetterNullable).orElse(Object::toString);
         var moveNameGetter  = Optional.ofNullable(moveNameGetterNullable).orElse(Object::toString);
         //
+        pli.outClear();
         var ownMonIds = I.of(context.ownParty.monsOnField.keySet()).toList();
         var outPrintField = method((Integer ownMonIdex) -> {
-            for (var e : context.foeParty.entrySet()) {
+            for (var e : context.foeParties.entrySet()) {
                 pli.outPrintAlignRight(partyNameGetter.apply(e.getKey()));
                 for (var foeMon : e.getValue().values()) {
                     pli.outPrintAlignRight("%s (%s HP)".formatted(pmonNameGetter.apply(foeMon.id), foeMon.status.hp));
@@ -69,10 +70,10 @@ public class PlayerDialog {
                 pli.outPrintAlignLeft
                         ("What do you want to do?");
                 var optionsL1 = I(
-                        tuple("Fight", function(() -> new PlayerFightDialog(pli, () -> outPrintField.accept(i))
+                        tuple("Fight", function(() -> new PlayerDialogForDecisionToFight(pli, () -> outPrintField.accept(i))
                                 .moveNameGetter(moveNameGetter)
                                 .decide(context, mon))),
-                        tuple("Switch Out", function(() -> new PlayerSwitchDialog(pli, () -> outPrintField.accept(i))
+                        tuple("Switch Out", function(() -> new PlayerDialogForDecisionToSwitch(pli, () -> outPrintField.accept(i))
                                 .pmonNameGetter(pmonNameGetter)
                                 .decide(context, mon)))
                 ).<StrictList<Tuple3<Integer, String, Function0<PmonDecision>>>>apply(strict(List()), (t, l) -> l.add(tuple(l.size() + 1, t.a1, t.a2)));

@@ -19,7 +19,7 @@
         <dependency>
             <groupId>jl95terceira</groupId>
             <artifactId>pmon</artifactId>
-            <version>0.5.5</version>
+            <version>0.8.0</version>
         </dependency>
     </dependencies>
 

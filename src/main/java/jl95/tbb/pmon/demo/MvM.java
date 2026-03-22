@@ -9,7 +9,7 @@ import jl95.lang.variadic.Method2;
 import jl95.tbb.Battle;
 import jl95.tbb.PartyId;
 import jl95.tbb.mon.MonFieldPosition;
-import jl95.tbb.mon.MonId;
+import jl95.tbb.mon.MonPartyFieldPosition;
 import jl95.tbb.pmon.*;
 import jl95.tbb.pmon.decision.PmonDecisionToSwitchOut;
 import jl95.tbb.pmon.decision.PmonDecisionToUseMove;
@@ -143,7 +143,7 @@ public class MvM {
         npcEntry.mons.addAll(List(Pmons.pmon2, Pmons.pmon3));
         Ref<PmonGlobalContext> globalContextRef = new Ref<>();
         StrictMap<PartyId, PmonLocalContext> localContextRefs = strict(Map());
-        Method2<MonId,Iterable<PmonUpdateOnTarget>> updateOnTargetHandler = (monId, atomicUpdates) -> {
+        Method2<MonPartyFieldPosition,Iterable<PmonUpdateOnTarget>> updateOnTargetHandler = (monId, atomicUpdates) -> {
             var targetPartyName = PartyIds.namesMap.get(monId.partyId());
             var targetMonName = Pmons.namesMap.get(globalContextRef.get().parties.get(monId.partyId()).monsOnField.get(monId.position()).id);
             for (var atomicUpdate: atomicUpdates) {
@@ -200,7 +200,7 @@ public class MvM {
                         .toMap(Map.Entry::getKey, e -> function((PartyId p, StrictSet<MonFieldPosition> monPositionsAble) -> {
 
                     var partyName = PartyIds.namesMap.get(p);
-                    var pFoe = localContextRefs.get(p).foeParty.keySet().iterator().next(); // only 1 foe in this demo (1v1) so get single next
+                    var pFoe = localContextRefs.get(p).foeParties.keySet().iterator().next(); // only 1 foe in this demo (1v1) so get single next
                     var party = globalContextRef.get().parties.get(p);
                     var decision = function((Pmon mon) -> {
 
@@ -217,7 +217,7 @@ public class MvM {
                         }
                         var decisionToUseMove = new PmonDecisionToUseMove();
                         decisionToUseMove.moveIndex = new Random().nextInt(0, mon.moves.size());
-                        decisionToUseMove.target = PmonDecisionToUseMove.Target.mon(new MonId(pFoe, localContextRefs.get(p).foeParty.get(pFoe).keySet().iterator().next()));
+                        decisionToUseMove.target = PmonDecisionToUseMove.Target.mon(new MonPartyFieldPosition(pFoe, localContextRefs.get(p).foeParties.get(pFoe).keySet().iterator().next()));
                         return PmonDecision.from(decisionToUseMove);
                     });
                     return strict(I.of(monPositionsAble).toMap(id -> id, id -> {
@@ -247,7 +247,7 @@ public class MvM {
                         for (var mon: localContextRefs.get(p).ownParty.monsOnField.values()) {
                             System.out.println("    "+Pmons.namesMap.get(mon.id)+" (%s HP)".formatted(mon.status.hp));
                         }
-                        for (var eFoe: localContextRefs.get(p).foeParty.entrySet()) {
+                        for (var eFoe: localContextRefs.get(p).foeParties.entrySet()) {
                             var pFoe = eFoe.getKey();
                             var foe = eFoe.getValue();
                             System.out.println(PartyIds.namesMap.get(pFoe));
@@ -282,10 +282,10 @@ public class MvM {
 
                             @Override
                             public void move(PmonUpdateByMove update) {
-                                var party = globalContextRef.get().parties.get(update.monId.partyId());
-                                var mon = party.monsOnField.get(update.monId.position());
+                                var party = globalContextRef.get().parties.get(update.monPartyFieldPosition.partyId());
+                                var mon = party.monsOnField.get(update.monPartyFieldPosition.position());
                                 System.out.printf("%s's %s used %s!\n",
-                                        PartyIds.namesMap.get(update.monId.partyId()),
+                                        PartyIds.namesMap.get(update.monPartyFieldPosition.partyId()),
                                         Pmons.namesMap.get(mon.id),
                                         MoveFactories.namesMap.get(mon.moves.get(update.moveIndex).id)); pause();
                                 for (var e: update.usageResults) {
@@ -299,11 +299,11 @@ public class MvM {
                                         }
                                         @Override
                                         public void immobilised(PmonStatusCondition.Id id) {
-                                            System.out.printf("%s's %s is immobilised!%n", PartyIds.namesMap.get(update.monId.partyId()), Pmons.namesMap.get(mon.id));
+                                            System.out.printf("%s's %s is immobilised!%n", PartyIds.namesMap.get(update.monPartyFieldPosition.partyId()), Pmons.namesMap.get(mon.id));
                                         }
                                         @Override
                                         public void hit(Iterable<PmonUpdateOnTarget> atomicUpdates) {
-                                            updateOnTargetHandler.accept(new MonId(foePartyId, foeMonPosition), atomicUpdates);
+                                            updateOnTargetHandler.accept(new MonPartyFieldPosition(foePartyId, foeMonPosition), atomicUpdates);
                                         }
                                     });
                                 }

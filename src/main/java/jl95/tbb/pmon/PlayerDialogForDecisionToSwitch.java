@@ -6,19 +6,19 @@ import jl95.tbb.pmon.decision.PmonDecisionToSwitchOut;
 
 import java.util.Optional;
 
-public class PlayerSwitchDialog {
+public class PlayerDialogForDecisionToSwitch {
 
-    private final PlayerDialogInterface pli;
+    private final PlayerInterface pli;
     private final Method0 fieldPrinter;
     private Function1<String, Pmon.Id> pmonNameGetterNullable;
 
-    public PlayerSwitchDialog(PlayerDialogInterface pli,
-                              Method0 fieldPrinter) {
+    public PlayerDialogForDecisionToSwitch(PlayerInterface pli,
+                                           Method0 fieldPrinter) {
         this.pli = pli;
         this.fieldPrinter = fieldPrinter;
     }
 
-    public PlayerSwitchDialog pmonNameGetter(Function1<String, Pmon.Id> i) {
+    public PlayerDialogForDecisionToSwitch pmonNameGetter(Function1<String, Pmon.Id> i) {
         this.pmonNameGetterNullable = i;
         return this;
     }
@@ -26,6 +26,7 @@ public class PlayerSwitchDialog {
 
         var pmonNameGetter  = Optional.ofNullable(pmonNameGetterNullable).orElse(Object::toString);
         //
+        pli.outClear();
         final var GO_BACK = -1;
         PmonDecision decision_ = null;
         do {

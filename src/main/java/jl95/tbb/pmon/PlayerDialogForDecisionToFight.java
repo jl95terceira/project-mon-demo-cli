@@ -2,7 +2,7 @@ package jl95.tbb.pmon;
 
 import jl95.lang.I;
 import jl95.lang.variadic.*;
-import jl95.tbb.mon.MonId;
+import jl95.tbb.mon.MonPartyFieldPosition;
 import jl95.tbb.pmon.decision.PmonDecisionToUseMove;
 import jl95.util.StrictList;
 
@@ -10,19 +10,19 @@ import java.util.Optional;
 
 import static jl95.lang.SuperPowers.*;
 
-public class PlayerFightDialog {
+public class PlayerDialogForDecisionToFight {
 
-    private final PlayerDialogInterface pli;
+    private final PlayerInterface pli;
     private final Method0 fieldPrinter;
     private Function1<String, PmonMove.Id> moveNameGetterNullable;
 
-    public PlayerFightDialog(PlayerDialogInterface pli,
-                             Method0 fieldPrinter) {
+    public PlayerDialogForDecisionToFight(PlayerInterface pli,
+                                          Method0 fieldPrinter) {
         this.pli = pli;
         this.fieldPrinter = fieldPrinter;
     }
 
-    public PlayerFightDialog moveNameGetter(Function1<String, PmonMove.Id> i) {
+    public PlayerDialogForDecisionToFight moveNameGetter(Function1<String, PmonMove.Id> i) {
         this.moveNameGetterNullable = i;
         return this;
     }
@@ -54,7 +54,7 @@ public class PlayerFightDialog {
                     pli.outPrintAlignLeft("Invalid index for move: %s".formatted(moveIndex));
                     continue;
                 }
-                useMove.target = PmonDecisionToUseMove.Target.mon(new MonId(context.foeParty.keySet().iterator().next(), context.foeParty.values().iterator().next().keySet().iterator().next())); //TODO: fix this - works only in case of foe 1 party with 1 mon
+                useMove.target = PmonDecisionToUseMove.Target.mon(new MonPartyFieldPosition(context.foeParties.keySet().iterator().next(), context.foeParties.values().iterator().next().keySet().iterator().next())); //TODO: fix this - works only in case of foe 1 party with 1 mon
                 decision_ = PmonDecision.from(useMove);
             } catch (Exception ex) {
                 pli.outClear();

@@ -9,7 +9,7 @@ import jl95.lang.variadic.Method2;
 import jl95.tbb.Battle;
 import jl95.tbb.PartyId;
 import jl95.tbb.mon.MonFieldPosition;
-import jl95.tbb.mon.MonId;
+import jl95.tbb.mon.MonPartyFieldPosition;
 import jl95.tbb.pmon.*;
 import jl95.tbb.pmon.decision.PmonDecisionToSwitchOut;
 import jl95.tbb.pmon.decision.PmonDecisionToUseMove;
@@ -143,7 +143,7 @@ public class PvM {
         npcEntry.mons.addAll(List(Pmons.pmon2, Pmons.pmon3));
         P<PmonGlobalContext> globalContextRef = new P<>(null);
         StrictMap<PartyId, PmonLocalContext> localContextRefs = strict(Map());
-        Method2<MonId,Iterable<PmonUpdateOnTarget>> updateOnTargetHandler = (monId, atomicUpdates) -> {
+        Method2<MonPartyFieldPosition,Iterable<PmonUpdateOnTarget>> updateOnTargetHandler = (monId, atomicUpdates) -> {
             var targetPartyName = PartyIds.namesMap.get(monId.partyId());
             var targetMonName = Pmons.namesMap.get(globalContextRef.get().parties.get(monId.partyId()).monsOnField.get(monId.position()).id);
             for (var atomicUpdate: atomicUpdates) {
@@ -191,10 +191,15 @@ public class PvM {
                 });
             }
         };
-        var dialog = new PlayerDialog()
+        var dialogForDecision = new PlayerDialogForDecision()
                 .partyNameGetter(PartyIds.namesMap::get)
                 .pmonNameGetter(Pmons.namesMap::get)
                 .moveNameGetter(MoveFactories.namesMap::get);
+        var dialogForContextUpdate = new PlayerDialogForContextUpdate()
+                .partyNameGetter(PartyIds.namesMap::get)
+                .pmonNameGetter(Pmons.namesMap::get)
+                .moveNameGetter(MoveFactories.namesMap::get)
+                .pause(this::pause);
         var winner = battle.start(
                 strict(Map(
                         tuple(PartyIds.PLAYER1, playerEntry),
@@ -203,11 +208,10 @@ public class PvM {
                 function(monPositionsAbleMap -> strict(I.of(monPositionsAbleMap.entrySet())
                         .toMap(Map.Entry::getKey, e -> function((PartyId p, StrictSet<MonFieldPosition> monPositionsAble) -> {
 
-                    var partyName = PartyIds.namesMap.get(p);
-                    var pFoe = localContextRefs.get(p).foeParty.keySet().iterator().next(); // only 1 foe in this demo (1v1) so get single next
+                    var pFoe = localContextRefs.get(p).foeParties.keySet().iterator().next(); // only 1 foe in this demo (1v1) so get single next
                     var party = globalContextRef.get().parties.get(p);
                     if (p == PartyIds.PLAYER1) {
-                        var decisions = dialog.decide(localContextRefs.get(p), p, monPositionsAble);
+                        var decisions = dialogForDecision.decide(localContextRefs.get(p), p, monPositionsAble);
                         return strict(I.of(monPositionsAble).toMap(id -> id, decisions::get));
                     }
                     var decision = function((MonFieldPosition id) -> {
@@ -226,7 +230,7 @@ public class PvM {
                         }
                         var decisionToUseMove = new PmonDecisionToUseMove();
                         decisionToUseMove.moveIndex = new Random().nextInt(0, mon.moves.size());
-                        decisionToUseMove.target = PmonDecisionToUseMove.Target.mon(new MonId(pFoe, localContextRefs.get(p).foeParty.get(pFoe).keySet().iterator().next()));
+                        decisionToUseMove.target = PmonDecisionToUseMove.Target.mon(new MonPartyFieldPosition(pFoe, localContextRefs.get(p).foeParties.get(pFoe).keySet().iterator().next()));
                         return PmonDecision.from(decisionToUseMove);
 
                     });
@@ -244,80 +248,13 @@ public class PvM {
                     public void onLocalContext(PartyId p, PmonLocalContext localContext) {
 
                         localContextRefs.put(p, localContext);
-                        if (p != PartyIds.PLAYER1) return;
-                        System.out.println(PartyIds.namesMap.get(p));
-                        for (var mon: localContextRefs.get(p).ownParty.monsOnField.values()) {
-                            System.out.println("    "+ Pmons.namesMap.get(mon.id)+" (%s HP)".formatted(mon.status.hp));
-                        }
-                        for (var eFoe: localContextRefs.get(p).foeParty.entrySet()) {
-                            var pFoe = eFoe.getKey();
-                            var foe = eFoe.getValue();
-                            System.out.println(PartyIds.namesMap.get(pFoe));
-                            for (var mon: foe.values()) {
-                                System.out.println("    "+ Pmons.namesMap.get(mon.id)+" (%s HP)".formatted(mon.status.hp));
-                            }
-                        }
-                        pause();
                     }
 
                     @Override
                     public void onLocalUpdate(PartyId id, PmonUpdate pmonUpdate) {
 
                         if (id != PartyIds.PLAYER1) return;
-                        pmonUpdate.get(new PmonUpdate.Handler() {
-                            @Override
-                            public void pass(PmonUpdateByPass update) {
-                                var party = globalContextRef.get().parties.get(update.partyId);
-                                System.out.printf("%s's %s won't do anything!\n",
-                                        PartyIds.namesMap.get(update.partyId),
-                                        Pmons.namesMap.get(party.monsOnField.get(update.monFieldPosition).id)); pause();
-                            }
-
-                            @Override
-                            public void switchOut(PmonUpdateBySwitchOut update) {
-                                var party = globalContextRef.get().parties.get(update.partyId);
-                                System.out.printf("%s withdraws %s and switches in %s!\n",
-                                        PartyIds.namesMap.get(update.partyId),
-                                        Pmons.namesMap.get(party.monsOnField.get(update.monFieldPosition).id),
-                                        Pmons.namesMap.get(party.mons.get(update.monToSwitchInPartyPosition).id)); pause();
-                            }
-
-                            @Override
-                            public void move(PmonUpdateByMove update) {
-                                var party = globalContextRef.get().parties.get(update.monId.partyId());
-                                var mon = party.monsOnField.get(update.monId.position());
-                                System.out.printf("%s's %s used %s!\n",
-                                        PartyIds.namesMap.get(update.monId.partyId()),
-                                        Pmons.namesMap.get(mon.id),
-                                        MoveFactories.namesMap.get(mon.moves.get(update.moveIndex).id)); pause();
-                                for (var e: update.usageResults) {
-                                    var foePartyId = e.a1;
-                                    var foeMonPosition = e.a2;
-                                    var foeMon = globalContextRef.get().parties.get(foePartyId).monsOnField.get(foeMonPosition);
-                                    e.a3.get(new PmonUpdateByMove.UsageResult.Handler() {
-                                        @Override
-                                        public void miss(PmonUpdateByMove.UsageResult.MissType missType) {
-                                            System.out.printf("It missed %s's %s...%n", PartyIds.namesMap.get(foePartyId), Pmons.namesMap.get(foeMon.id));
-                                        }
-                                        @Override
-                                        public void immobilised(PmonStatusCondition.Id id) {
-                                            System.out.printf("%s's %s is immobilised!%n", PartyIds.namesMap.get(update.monId.partyId()), Pmons.namesMap.get(mon.id));
-                                        }
-                                        @Override
-                                        public void hit(Iterable<PmonUpdateOnTarget> atomicUpdates) {
-                                            updateOnTargetHandler.accept(new MonId(foePartyId, foeMonPosition), atomicUpdates);
-                                        }
-                                    });
-                                }
-                            }
-
-                            @Override
-                            public void other(PmonUpdateByOther pmonUpdateByOther) {
-                                for (var e: pmonUpdateByOther.atomicUpdates.entrySet()) {
-                                    updateOnTargetHandler.accept(e.getKey(), e.getValue());
-                                }
-                            }
-                        });
+                        dialogForContextUpdate.handle(localContextRefs.get(id), pmonUpdate);
                     }
                 },
                 constant(false)
