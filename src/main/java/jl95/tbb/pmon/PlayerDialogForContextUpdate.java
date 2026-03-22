@@ -113,9 +113,12 @@ public class PlayerDialogForContextUpdate {
             @Override
             public void switchOut(PmonUpdateBySwitchOut update) {
                 var party = context.allParties.get(update.partyId);
-                pli.outPrintAlignLeft("%s withdraws %s and switches in %s!\n".formatted(
+                pli.outPrintAlignLeft("%s withdraws %s!\n".formatted(
                         partyNameGetter.apply(update.partyId),
-                        pmonNameGetter.apply(party.get(update.monFieldPosition).id),
+                        pmonNameGetter.apply(party.get(update.monFieldPosition).id)));
+                pause.accept();
+                pli.outPrintAlignLeft("%s switches in %s!\n".formatted(
+                        partyNameGetter.apply(update.partyId),
                         pmonNameGetter.apply(update.monToSwitchInId)));
                 pause.accept();
             }
